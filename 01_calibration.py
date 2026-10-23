@@ -39,7 +39,7 @@ for path in glob.glob('camera_cal/calibration*.jpg'):
         cv2.drawChessboardCorners(img, (rows, cols), corners, ret)
 
     # Display the image
-    cv2.imshow('chess board', gray)
+    cv2.imshow('chess board', img)
     cv2.waitKey(20)
 
 # Calibrate the camera and save the results
