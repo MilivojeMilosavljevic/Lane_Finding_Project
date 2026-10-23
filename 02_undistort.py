@@ -14,7 +14,7 @@ img = cv2.imread('test_images/test1.jpg')
 h, w = img.shape[:2]
 
 # Obtain the new camera matrix and undistort the image
-newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 0, (w, h))
 undistortedImg = cv2.undistort(img, mtx, dist, None, newCameraMtx)
 
 # Display the final result
