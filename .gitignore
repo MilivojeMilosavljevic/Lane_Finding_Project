@@ -1,3 +1,5 @@
 ﻿.venv/
 __pycache__/
 *.pyc
+output_videos/*.mp4
+!output_videos/*_h264.mp4
