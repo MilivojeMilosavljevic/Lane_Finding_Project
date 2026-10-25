@@ -79,7 +79,7 @@ My first try was a Sobel gradient in x, but on the test images it mostly found t
 
 The masks are joined with OR, and a 3x3 median blur removes single dots. A 5x5 median was too strong, it erased the far dashes, which are only a few pixels wide.
 
-For the white mask I started with a fixed threshold on the red channel. At 200 the light concrete on test1.jpg and test4.jpg passed as white, so I raised it to 220. That fixed the concrete, but the dashed lines were left with very few pixels, and in challenge02 the faded dashes disappeared completely. One value could not work for both. The 3rd presentation (slides 38–41) says that a fixed threshold works well only when the lighting is the same everywhere, and shows adaptive thresholding for the other cases, so in the end I used an adaptive threshold, the same way as in the lab script 03_09_adaptive_thrashold.py: a pixel is white if it is brighter than the mean of its 25x25 neighbourhood by more than 35. The downside is that it also catches other bright edges (the barrier, cars, shadow edges), but those are mostly off the road and get removed in the next steps.
+For the white mask I started with a fixed threshold on the red channel. At 200 the light concrete on test1.jpg and test4.jpg passed as white, so I raised it to 220. That fixed the concrete, but the dashed lines were left with very few pixels, and in challenge02 the faded dashes disappeared completely. One value could not work for both. The 3rd presentation (slides 38–41) says that a fixed threshold works well only when the lighting is the same everywhere, and shows adaptive thresholding for the other cases, so in the end I used an adaptive threshold, with the same function as in the lab script 03_09_adaptive_thrashold.py: a pixel is white if it is brighter than the mean of its 25x25 neighbourhood by more than 35. The downside is that it also catches other bright edges (the barrier, cars, shadow edges), but those are mostly off the road and get removed in the next steps.
 
 The yellow range first went up to H = 35. In challenge03 the sunny leaves next to the road are yellow-green and they ended up in the yellow mask, so the lines were pulled into the bushes. The yellow lines on the road have a hue of about 20 and the leaves are mostly above 30, so I lowered the upper limit to 30. Most of the leaves were gone and the lines stayed the same.
 
@@ -146,19 +146,13 @@ The problem here was that the left and the right line often give a very differen
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
+project_video03:
 
 https://github.com/user-attachments/assets/da78dbde-03ce-49bc-83b1-6253e7d48998
 
-
-
-
 07_video.py runs steps 2–6 on every frame and picks the camera by the size of the frame. A new polynomial is used only when the line has at least 500 pixels and was found in at least 3 of the 9 windows. The new lines are also kept only if the lane between them is 2–5.5 m wide at the bottom and at the top, otherwise the lines from the previous frames are used. The lane is drawn with the average of the polynomials from the last 5 frames, so it stays calm. The script saves an mp4v file, which I converted to H.264 with ffmpeg so it plays on GitHub.
 
-The lane is found well on all three project videos (project_video01, project_video02 and project_video03 from the second camera) and on challenge01. The lane stays calm and only wobbles a little in a few places.
-
-* [project_video01_h264.mp4](./output_videos/project_video01_h264.mp4)
-* [project_video02_h264.mp4](./output_videos/project_video02_h264.mp4)
-* [challenge01_h264.mp4](./output_videos/challenge01_h264.mp4)
+The lane is found well on all three project videos (project_video03 above, which is from the first camera, and project_video01 and project_video02 from the second camera) and on challenge01. The lane stays calm and only wobbles a little in a few places. The results of all six videos are in the output_videos folder (project_video01_h264.mp4, project_video02_h264.mp4, project_video03_h264.mp4, challenge01_h264.mp4, challenge02_h264.mp4 and challenge03_h264.mp4).
 
 ### Discussion
 
@@ -170,7 +164,7 @@ The pipeline is weakest when the road is not flat or the lines are hard to see. 
 
 challenge02 and challenge03 are much harder, and I am not sure how to solve them properly with this approach:
 
-* [challenge02_h264.mp4](./output_videos/challenge02_h264.mp4): the white dashes are worn out on light concrete, the yellow line fades in the distance and gets mixed up with the concrete wall next to it, it is dark under the bridge, and the camera looks at the road at a slightly different angle, so my trapezoid does not fit well. The lane is drawn, but it is not always stable.
-* [challenge03_h264.mp4](./output_videos/challenge03_h264.mp4): a mountain road with very sharp curves where the lines leave the trapezoid, yellow-green leaves next to the road, sun glare and deep shadows. At first nothing worked. Lowering the yellow hue limit (to leave the leaves out), using a line only if it is found in at least 3 of the 9 windows, and keeping new lines only if the lane between them has a normal width made it usable for most of the video, but it still fails in the sharpest curves near the end.
+* challenge02: the white dashes are worn out on light concrete, the yellow line fades in the distance and gets mixed up with the concrete wall next to it, it is dark under the bridge, and the camera looks at the road at a slightly different angle, so my trapezoid does not fit well. The lane is drawn, but it is not always stable.
+* challenge03: a mountain road with very sharp curves where the lines leave the trapezoid, yellow-green leaves next to the road, sun glare and deep shadows. At first nothing worked. Lowering the yellow hue limit (to leave the leaves out), using a line only if it is found in at least 3 of the 9 windows, and keeping new lines only if the lane between them has a normal width made it usable for most of the video, but it still fails in the sharpest curves near the end.
 
 The three challange*.jpg images are smaller copies of frames from challenge01, but because of their size the code treats them as the second camera. The lane is still found, but the result is less accurate (no undistortion and the trapezoid reaches over the hood).

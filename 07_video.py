@@ -3,8 +3,8 @@ import numpy as np
 import cv2 as cv
 
 # Video to process and where to save the result
-video_path = 'test_videos/challenge02.mp4'
-output_path = 'output_videos/challenge02.mp4'
+video_path = 'test_videos/project_video03.mp4'
+output_path = 'output_videos/project_video03.mp4'
 
 calibration = np.load('camera_cal/calib.npz')
 mtx = calibration['mtx']

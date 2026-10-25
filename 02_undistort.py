@@ -18,6 +18,6 @@ newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 0, (w, h))
 undistortedImg = cv2.undistort(img, mtx, dist, None, newCameraMtx)
 
 # Display the final result
-cv2.imshow('undistorted',cv2.resize(np.hstack((img, undistortedImg)), None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR))
+cv2.imshow('undistorted', cv2.resize(np.hstack((img, undistortedImg)), None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
