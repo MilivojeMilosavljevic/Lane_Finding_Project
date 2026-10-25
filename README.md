@@ -162,6 +162,8 @@ Most of my time went into the numbers: the white threshold (first fixed, then ad
 
 The pipeline is weakest when the road is not flat or the lines are hard to see. In project_video03 the car goes over a few bumps where it drives onto and off the concrete bridge. The camera tilts for a moment, the fixed trapezoid no longer matches the road, and the lane moves a little for a couple of frames. Shadows, worn lines, glare, night or rain would leave too few line pixels, and a lane change would confuse the histogram. To make it more robust I would search around the previous polynomial instead of starting from zero every frame, and place the trapezoid automatically instead of using fixed points.
 
+The radius and the position are only estimates. They depend on the usual 30 m of road and 3.7 m lane width, and on the camera being in the middle of the car and looking straight ahead. This is less certain for the second camera, because it has no calibration: comparing the dashed lines of both cameras, its bird's eye view seems to show a bit more than 30 m of road, so its radius is probably somewhat too small.
+
 challenge02 and challenge03 are much harder, and I am not sure how to solve them properly with this approach:
 
 * challenge02: the white dashes are worn out on light concrete, the yellow line fades in the distance and gets mixed up with the concrete wall next to it, it is dark under the bridge, and the camera looks at the road at a slightly different angle, so my trapezoid does not fit well. The lane is drawn, but it is not always stable.
