@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/da78dbde-03ce-49bc-83b1-6253e7d48998
 
 07_video.py runs steps 2–6 on every frame and picks the camera by the size of the frame. A new polynomial is used only when the line has at least 500 pixels and was found in at least 3 of the 9 windows. The new lines are also kept only if the lane between them is 2–5.5 m wide at the bottom and at the top, otherwise the lines from the previous frames are used. The lane is drawn with the average of the polynomials from the last 5 frames, so it stays calm. The script saves an mp4v file, which I converted to H.264 with ffmpeg so it plays on GitHub.
 
-The lane is found well on all three project videos (project_video03 above, and project_video01 and project_video02 from the second camera) and on challenge01. The lane stays calm and only wobbles a little in a few places.
+The lane is found well on all three project videos (project_video01, project_video02 and project_video03 from the second camera) and on challenge01. The lane stays calm and only wobbles a little in a few places.
 
 * [project_video01_h264.mp4](./output_videos/project_video01_h264.mp4)
 * [project_video02_h264.mp4](./output_videos/project_video02_h264.mp4)
