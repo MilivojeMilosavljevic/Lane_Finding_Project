@@ -7,7 +7,7 @@ mtx = calibration['mtx']
 dist = calibration['dist']
 
 # Load one of the test images
-img = cv.imread('test_images/test5.jpg')
+img = cv.imread('test_images/test6.jpg')
 h, w = img.shape[:2]
 
 # Obtain the new camera matrix and undistort the image

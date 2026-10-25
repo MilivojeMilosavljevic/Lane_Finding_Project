@@ -33,7 +33,10 @@ right = int(dst[2][0])
 
 xm_per_pix = 3.7 / (right - left)
 ym_per_pix = 30 / h
-car_center = left + (w / 2 - src[1][0]) * (right - left) / (src[2][0] - src[1][0])
+car_x = w / 2
+if w == 1280:
+    car_x = newCameraMtx[0][2]
+car_center = left + (car_x - src[1][0]) * (right - left) / (src[2][0] - src[1][0])
 
 left_fits = []
 right_fits = []

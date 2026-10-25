@@ -88,8 +88,13 @@ left_curverad = (1 + (2 * left_fit_m[0] * y_eval + left_fit_m[1]) ** 2) ** 1.5 /
 right_curverad = (1 + (2 * right_fit_m[0] * y_eval + right_fit_m[1]) ** 2) ** 1.5 / abs(2 * right_fit_m[0])
 curvature = (left_curverad + right_curverad) / 2
 
-# Vehicle position
-car_center = left + (w / 2 - src[1][0]) * (right - left) / (src[2][0] - src[1][0])
+# Vehicle position, the car is at the optical center of the camera (cx)
+car_x = w / 2
+if w == 1280:
+    calibration = np.load('camera_cal/calib.npz')
+    newCameraMtx, roi = cv.getOptimalNewCameraMatrix(calibration['mtx'], calibration['dist'], (w, h), 0, (w, h))
+    car_x = newCameraMtx[0][2]
+car_center = left + (car_x - src[1][0]) * (right - left) / (src[2][0] - src[1][0])
 left_bottom = left_fit[0] * (h - 1) ** 2 + left_fit[1] * (h - 1) + left_fit[2]
 right_bottom = right_fit[0] * (h - 1) ** 2 + right_fit[1] * (h - 1) + right_fit[2]
 lane_center = (left_bottom + right_bottom) / 2

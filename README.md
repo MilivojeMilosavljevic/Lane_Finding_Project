@@ -108,7 +108,7 @@ straight_lines1.jpg with the source points drawn, and the warped result with the
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-This is the first part of 05_lane_lines.py, done after slides 32–34 of the 10th presentation. I sum the white pixels of every column in the bottom half of the bird's eye view. The two highest peaks, one on each side of the middle, are where the lines start. I only look for the peaks near the place where the lines should be (on the 1280x720 images between x = 150 and x = 1130), because on test1.jpg the right peak first landed on the edge of a white car, which put the car 0.84 m left of the center instead of 0.32 m.
+This is the first part of 05_lane_lines.py, done after slides 32–34 of the 10th presentation. I sum the white pixels of every column in the bottom half of the bird's eye view. The two highest peaks, one on each side of the middle, are where the lines start. I only look for the peaks near the place where the lines should be (on the 1280x720 images between x = 150 and x = 1130), because on test1.jpg the right peak first landed on the edge of a white car, which moved the car half a meter too far to the left.
 
 From the peaks the sliding windows go up the image, 9 per line and 200 px wide. Each window takes the white pixels inside it, and if there are more than 50, the next window moves to their mean x. Through the collected pixels of each line I fit
 
@@ -130,9 +130,9 @@ R = (1 + (2Ay + B)²)^(3/2) / |2A|
 
 I do this for both lines and write their average on the image.
 
-For the position of the car I assumed that the camera is in the middle of the car, so the middle of the image is the middle of the car. The middle of the lane is halfway between the two lines at the bottom of the image. The difference between these two, converted to meters, is the offset. If it is positive the car is right of the center, and if it is negative it is left.
+For the position of the car I assumed that the camera is in the middle of the car. At first I took the middle of the image (x = 640) as the middle of the car, but then the car came out left of the center in almost every frame. The camera looks straight ahead, so the middle of the car is at the optical center of the camera, which is the cx value of the camera matrix from the calibration (x = 680 in the undistorted image). The 960x540 camera has no calibration, so for it the middle of the image is used. The middle of the lane is halfway between the two lines at the bottom of the image. The difference between these two, converted to meters, is the offset. If it is positive the car is right of the center, and if it is negative it is left. The example output that came with the task (examples/example_output.jpg) shows 0.17 m left, and on the same frame of the project video I get 0.15 m left.
 
-On the straight road images the radius comes out at more than 10 km, which makes sense for a straight road, and the car is about 0.15 m left of the center. In the curves of the test images the radius is about 1 km (between 920 and 2280 m).
+On straight roads the radius comes out at several kilometers or more, which makes sense for a straight road, and the car is within about 0.1 m of the center. In the curves of the test images the radius is about 1 km (between 920 and 2280 m).
 
 The problem here was that the left and the right line often give a very different radius, for example 1831 m and 382 m on test4.jpg. The dashed line has only 2–3 dashes in the image, so its polynomial is not as reliable as the one of the solid line, and since the radius depends on 1/A, a small difference in A changes the result a lot. That is why I use the average of both lines, and in the video also the average of the last 5 frames.
 
