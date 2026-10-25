@@ -10,14 +10,6 @@ calibration = np.load('camera_cal/calib.npz')
 mtx = calibration['mtx']
 dist = calibration['dist']
 
-src = np.float32([[600, 460], [335, 660], [998, 660], [712, 460]])
-dst = np.float32([[300, 0], [300, 720], [980, 720], [980, 0]])
-M = cv.getPerspectiveTransform(src, dst)
-Minv = cv.getPerspectiveTransform(dst, src)
-
-xm_per_pix = 3.7 / 680
-ym_per_pix = 0.03
-
 cap = cv.VideoCapture(video_path)
 fps = cap.get(cv.CAP_PROP_FPS)
 w = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
@@ -28,7 +20,21 @@ out = cv.VideoWriter(output_path, cv.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
 
 newCameraMtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w, h), 0, (w, h))
 
-# Polynomials from the last 5 frames, the lane is drawn with their average
+if w == 1280:
+    src = np.float32([[600, 460], [335, 660], [998, 660], [712, 460]])
+    dst = np.float32([[300, 0], [300, 720], [980, 720], [980, 0]])
+else:
+    src = np.float32([[431, 340], [148, 540], [849, 540], [534, 340]])
+    dst = np.float32([[225, 0], [225, 540], [735, 540], [735, 0]])
+M = cv.getPerspectiveTransform(src, dst)
+Minv = cv.getPerspectiveTransform(dst, src)
+left = int(dst[1][0])
+right = int(dst[2][0])
+
+xm_per_pix = 3.7 / (right - left)
+ym_per_pix = 30 / h
+car_center = left + (w / 2 - src[1][0]) * (right - left) / (src[2][0] - src[1][0])
+
 left_fits = []
 right_fits = []
 
@@ -37,13 +43,15 @@ while True:
     if not ret: break
 
     # Step 2: undistort
-    img = cv.undistort(frame, mtx, dist, None, newCameraMtx)
+    img = frame
+    if w == 1280:
+        img = cv.undistort(frame, mtx, dist, None, newCameraMtx)
 
     # Step 3: binary image
     b, g, r = cv.split(img)
     white = cv.adaptiveThreshold(r, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 25, -35)
     hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-    yellow = cv.inRange(hsv, np.array([15, 80, 100]), np.array([35, 255, 255]))
+    yellow = cv.inRange(hsv, np.array([15, 80, 100]), np.array([30, 255, 255]))
     binary = cv.medianBlur(cv.bitwise_or(white, yellow), 3)
 
     # Step 4: bird's eye view
@@ -51,13 +59,15 @@ while True:
 
     # Step 5: histogram and sliding windows
     histogram = np.sum(warped[h // 2:, :], axis=0)
-    leftx_current = np.argmax(histogram[150:640]) + 150
-    rightx_current = np.argmax(histogram[640:1130]) + 640
+    leftx_current = np.argmax(histogram[left // 2:w // 2]) + left // 2
+    rightx_current = np.argmax(histogram[w // 2:(w + right) // 2]) + w // 2
 
     nonzeroy, nonzerox = warped.nonzero()
     window_height = h // 9
     left_inds = []
     right_inds = []
+    left_windows = 0
+    right_windows = 0
 
     for window in range(9):
         y_low = h - (window + 1) * window_height
@@ -71,19 +81,28 @@ while True:
 
         if len(good_left) > 50:
             leftx_current = int(np.mean(nonzerox[good_left]))
+            left_windows += 1
         if len(good_right) > 50:
             rightx_current = int(np.mean(nonzerox[good_right]))
+            right_windows += 1
 
     left_inds = np.concatenate(left_inds)
     right_inds = np.concatenate(right_inds)
 
-    # New polynomial only if the line has enough pixels, otherwise the old ones are used
-    if len(left_inds) > 500:
-        left_fits.append(np.polyfit(nonzeroy[left_inds], nonzerox[left_inds], 2))
-    if len(right_inds) > 500:
-        right_fits.append(np.polyfit(nonzeroy[right_inds], nonzerox[right_inds], 2))
-    left_fits = left_fits[-5:]
-    right_fits = right_fits[-5:]
+    left_fit = left_fits[-1] if left_fits else None
+    right_fit = right_fits[-1] if right_fits else None
+    if len(left_inds) > 500 and left_windows >= 3:
+        left_fit = np.polyfit(nonzeroy[left_inds], nonzerox[left_inds], 2)
+    if len(right_inds) > 500 and right_windows >= 3:
+        right_fit = np.polyfit(nonzeroy[right_inds], nonzerox[right_inds], 2)
+
+    # Lane width check
+    if left_fit is not None and right_fit is not None:
+        width_bottom = (np.polyval(right_fit, h - 1) - np.polyval(left_fit, h - 1)) * xm_per_pix
+        width_top = (np.polyval(right_fit, 0) - np.polyval(left_fit, 0)) * xm_per_pix
+        if 2 < width_bottom < 5.5 and 2 < width_top < 5.5:
+            left_fits = (left_fits + [left_fit])[-5:]
+            right_fits = (right_fits + [right_fit])[-5:]
 
     if len(left_fits) == 0 or len(right_fits) == 0:
         result = img
@@ -91,7 +110,7 @@ while True:
         left_fit = np.mean(left_fits, axis=0)
         right_fit = np.mean(right_fits, axis=0)
 
-        # Step 6: radius of curvature (polynomial converted to meters) and vehicle position
+        # Step 6: curvature and position
         y_eval = (h - 1) * ym_per_pix
         radius = []
         for fit in (left_fit, right_fit):
@@ -103,10 +122,9 @@ while True:
         ploty = np.arange(h)
         left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
         right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
-        car_center = 300 + (640 - 335) * (980 - 300) / (998 - 335)
         offset = (car_center - (left_fitx[-1] + right_fitx[-1]) / 2) * xm_per_pix
 
-        # Step 7: draw the lane and warp it back
+        # Step 7: draw the lane
         lane = np.zeros_like(img)
         for y in range(h):
             cv.line(lane, (int(left_fitx[y]), y), (int(right_fitx[y]), y), (0, 255, 0), 1)

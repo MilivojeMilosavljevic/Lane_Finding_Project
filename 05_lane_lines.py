@@ -5,11 +5,17 @@ binary_warped = cv.imread('output_images/warped_binary.png', 0)
 h, w = binary_warped.shape
 out_img = cv.cvtColor(binary_warped, cv.COLOR_GRAY2BGR)
 
-# Histogram of the bottom half, the peaks are where the lines start (searched only between x = 150 and 1130)
+perspective = np.load('output_images/perspective.npz')
+src = perspective['src']
+dst = perspective['dst']
+left = int(dst[1][0])
+right = int(dst[2][0])
+
+# Histogram of the bottom half
 histogram = np.sum(binary_warped[h // 2:, :], axis=0)
 midpoint = w // 2
-leftx_base = np.argmax(histogram[150:midpoint]) + 150
-rightx_base = np.argmax(histogram[midpoint:1130]) + midpoint
+leftx_base = np.argmax(histogram[left // 2:midpoint]) + left // 2
+rightx_base = np.argmax(histogram[midpoint:(w + right) // 2]) + midpoint
 
 # Sliding windows
 nwindows = 9
@@ -55,7 +61,7 @@ lefty = nonzeroy[left_lane_inds]
 rightx = nonzerox[right_lane_inds]
 righty = nonzeroy[right_lane_inds]
 
-# Polynomial x = A*y^2 + B*y + C for each line
+# Polynomial for each line
 left_fit = np.polyfit(lefty, leftx, 2)
 right_fit = np.polyfit(righty, rightx, 2)
 
@@ -69,11 +75,11 @@ for i in range(h - 1):
     cv.line(out_img, (int(left_fitx[i]), i), (int(left_fitx[i + 1]), i + 1), (0, 255, 255), 3)
     cv.line(out_img, (int(right_fitx[i]), i), (int(right_fitx[i + 1]), i + 1), (0, 255, 255), 3)
 
-# Meters per pixel: lane width 3.7 m is 680 px, y measured on the dashed lines (about 0.03 m per pixel)
-xm_per_pix = 3.7 / 680
-ym_per_pix = 0.03
+# Meters per pixel
+xm_per_pix = 3.7 / (right - left)
+ym_per_pix = 30 / h
 
-# Radius of curvature at the bottom of the image, from the polynomials fitted in meters
+# Radius of curvature
 left_fit_m = np.polyfit(lefty * ym_per_pix, leftx * xm_per_pix, 2)
 right_fit_m = np.polyfit(righty * ym_per_pix, rightx * xm_per_pix, 2)
 
@@ -82,8 +88,8 @@ left_curverad = (1 + (2 * left_fit_m[0] * y_eval + left_fit_m[1]) ** 2) ** 1.5 /
 right_curverad = (1 + (2 * right_fit_m[0] * y_eval + right_fit_m[1]) ** 2) ** 1.5 / abs(2 * right_fit_m[0])
 curvature = (left_curverad + right_curverad) / 2
 
-# Vehicle position, the camera is in the middle of the car (x = 640 is x = 613 in the bird's eye view)
-car_center = 300 + (640 - 335) * (980 - 300) / (998 - 335)
+# Vehicle position
+car_center = left + (w / 2 - src[1][0]) * (right - left) / (src[2][0] - src[1][0])
 left_bottom = left_fit[0] * (h - 1) ** 2 + left_fit[1] * (h - 1) + left_fit[2]
 right_bottom = right_fit[0] * (h - 1) ** 2 + right_fit[1] * (h - 1) + right_fit[2]
 lane_center = (left_bottom + right_bottom) / 2

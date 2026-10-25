@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 
 binary = cv.imread('output_images/binary.png', 0)
+h, w = binary.shape
 
 def warper(img, src, dst):
 
@@ -13,13 +14,17 @@ def warper(img, src, dst):
     return warped
 
 # Trapezoid on the road and the rectangle it is mapped to
-src = np.float32([[600, 460], [335, 660], [998, 660], [712, 460]])
-dst = np.float32([[300, 0], [300, 720], [980, 720], [980, 0]])
+if w == 1280:
+    src = np.float32([[600, 460], [335, 660], [998, 660], [712, 460]])
+    dst = np.float32([[300, 0], [300, 720], [980, 720], [980, 0]])
+else:
+    src = np.float32([[431, 340], [148, 540], [849, 540], [534, 340]])
+    dst = np.float32([[225, 0], [225, 540], [735, 540], [735, 0]])
 
 warped_binary = warper(binary, src, dst)
 cv.imwrite('output_images/warped_binary.png', warped_binary)
+np.savez('output_images/perspective.npz', src=src, dst=dst)
 
-# Same transform on the color image, with the source and destination points drawn
 img = cv.imread('output_images/undistorted.png')
 warped = warper(img, src, dst)
 for i in range(4):
